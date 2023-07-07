@@ -18,6 +18,8 @@ class AddFieldsToStoresTable extends Migration
             $table->string('tag_line_ar')->nullable()->after('tag_line');
             $table->longText('short_description_ar')->nullable()->after('short_description');
             $table->longText('detailed_description_ar')->nullable()->after('detailed_description');
+            $table->string('lang')->nullable()->after('detailed_description_ar');
+
         });
     }
 

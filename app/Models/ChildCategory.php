@@ -17,12 +17,14 @@ class ChildCategory extends Model
         'subcategory_id',
         'title',
         'title_ar',
+        'title_es',
         'description',
         'image',
         'featured',
         'status',
         'order',
-        'popular'
+        'popular',
+        'slug'
     ];
 
     protected $hidden = [

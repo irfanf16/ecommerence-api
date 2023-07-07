@@ -341,6 +341,8 @@ class VendorProductsController extends Controller
             ]);
         }
 
+        $lang=Auth::user()->phone;
+
         // STORE PRODUCT DETAIL DESCRIPTION
         $file_code = $this->randomStr(12);
         Storage::disk('product')->put("detail/$file_code.json", json_encode([
@@ -349,7 +351,7 @@ class VendorProductsController extends Controller
         // STORE PRODUCT DETAIL DESCRIPTION in arbic
         $file_code_ar = $this->randomStr(12);
         Storage::disk('product')->put("detail/$file_code_ar.json", json_encode([
-            'content' =>$this->translate( $request->detailed_description ?? 'Not Provided','ar'),
+            'content' =>$this->translate( $request->detailed_description ?? 'Not Provided',$lang),
         ]));
 
         // STORE PRODUCT PRIMARY-IMAGE
@@ -370,14 +372,14 @@ class VendorProductsController extends Controller
         $formData = [
             'name' => $request->name,
             'slug' =>$this->createSlug('products',$request->name),
-            'name_ar' =>$this->translate( $request->name,'ar'),
+            'name_ar' =>$this->translate( $request->name,$lang),
             'category_id' => $request->category_id,
             'subcategory_id' => $request->subcategory_id,
             'childcategory_id' => $request->childcategory_id,
             'brand_id' => $request->brand_id,
             'store_id' => Auth::user()->store->id,
             'short_description' => $request->short_description,
-            'short_description_ar' =>$this->translate($request->short_description,'ar'),
+            'short_description_ar' =>$this->translate($request->short_description,$lang),
             'detailed_description' => "storage/product/detail/$file_code.json",
             'detailed_description_ar' => "storage/product/detail/$file_code_ar.json",
             'package_contents' => $request->package_contents,
@@ -621,6 +623,7 @@ class VendorProductsController extends Controller
                 'errors' => $validator->errors()->all()
             ]);
         }
+
 
         $product = Product::where('id', $id)->first();
 //        dd(str_contains('storage/product/detail',$product->detailed_description));
@@ -900,7 +903,7 @@ class VendorProductsController extends Controller
 
     public function updateTranslation(Request $request, $id)
     {
-        
+
         // $product = ($request->all());
         $product = Product::find($id);
 

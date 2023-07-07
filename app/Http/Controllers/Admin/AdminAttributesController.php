@@ -123,6 +123,7 @@ class AdminAttributesController extends Controller
         $validator = Validator::make( $request->all(), [
             'title'       => 'bail|required|string|unique:attributes|max:100',
             'title_ar'       => 'bail|required|string|unique:attributes|max:100',
+            'title_es'       => 'bail|required|string|unique:attributes|max:100',
         ]);
 
         if($validator->fails()){
@@ -137,6 +138,7 @@ class AdminAttributesController extends Controller
                 'title'  => $request->title,
                 'slug'       => $this->createSlug('attributes',$request->title),
                 'title_ar'  => $request->title_ar,
+                'title_es'  => $request->title_es,
                 'status' => $request->status == "on" ? 1 : 0,
             ];
 
@@ -259,6 +261,7 @@ class AdminAttributesController extends Controller
         $validator = Validator::make( $request->all(), [
             'title'       => ['bail', 'required', 'string',Rule::unique('attributes')->ignore($id), 'max:100'],
             'title_ar'       => ['bail', 'required', 'string',Rule::unique('attributes')->ignore($id), 'max:100'],
+            'title_es'       => ['bail', 'required', 'string',Rule::unique('attributes')->ignore($id), 'max:100'],
         ]);
 
         if($validator->fails()){
@@ -273,6 +276,7 @@ class AdminAttributesController extends Controller
                 'title'      => $request->title,
 //                'slug'       => $this->createSlug('categories',$request->title),
                 'title_ar'      => $request->title_ar,
+                'title_es'      => $request->title_es,
                 'status'     => $request->status == "on" ? 1 : 0,
             ];
 

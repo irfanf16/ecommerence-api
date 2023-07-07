@@ -15,6 +15,7 @@ class AddFieldToCategoriesTable extends Migration
     {
         Schema::table('categories', function (Blueprint $table) {
             $table->string('title_ar')->nullable()->after('title');
+            $table->string('title_es')->nullable()->after('title_ar');
         });
     }
 

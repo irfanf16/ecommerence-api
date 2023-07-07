@@ -16,6 +16,8 @@ class AddFieldsToAttributesTable extends Migration
         Schema::table('attributes', function (Blueprint $table) {
             $table->string('title_ar')->nullable()->after('title');
             $table->string('slug')->nullable()->after('title');
+            $table->string('title_es')->nullable()->after('slug');
+
         });
     }
 

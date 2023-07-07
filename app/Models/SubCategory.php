@@ -16,6 +16,7 @@ class SubCategory extends Model
         'category_id',
         'title',
         'title_ar',
+        'title_es',
         'description',
         'image',
         'featured',

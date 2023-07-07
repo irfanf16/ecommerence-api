@@ -127,6 +127,7 @@ class AdminSubcategoriesController extends Controller
                 'category_id' => ['bail', 'required', 'integer'],
                 'title' => ['bail', 'required', 'string', 'max:100'],
                 'title_ar' => ['bail', 'required', 'string', 'max:100'],
+                'title_es' => ['bail', 'required', 'string', 'max:100'],
                 'description' => ['bail', 'max:500'],
             ]);
 
@@ -143,6 +144,7 @@ class AdminSubcategoriesController extends Controller
                 'title' => $request->title,
                 'slug'       => $this->createSlug('sub_categories',$request->title),
                 'title_ar' => $request->title_ar,
+                'title_es' => $request->title_es,
                 'description' => $request->description,
                 'featured' => $request->featured == "on" ? 1 : 0,
                 'status' => $request->status == "on" ? 1 : 0,
@@ -248,6 +250,7 @@ class AdminSubcategoriesController extends Controller
             'category_id' => ['bail', 'required', 'integer'],
             'title' => ['bail', 'required', 'string', 'max:100'],
             'title_ar' => ['bail', 'required', 'string', 'max:100'],
+            'title_es' => ['bail', 'required', 'string', 'max:100'],
             'description' => ['bail', 'max:500']
         ]);
 
@@ -278,6 +281,7 @@ class AdminSubcategoriesController extends Controller
             'title' => $request->title,
 //            'slug'       => $this->createSlug('categories',$request->title),
             'title_ar' => $request->title_ar,
+            'title_es' => $request->title_es,
             'description' => $request->description,
             'featured' => $request->featured == "on" ? 1 : 0,
             'status' => $request->status == "on" ? 1 : 0,

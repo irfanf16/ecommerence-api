@@ -15,6 +15,7 @@ class AddFieldsToBrandsTable extends Migration
     {
         Schema::table('brands', function (Blueprint $table) {
             $table->string('name_ar')->nullable()->after('name');
+            $table->string('name_es')->nullable()->after('name_ar');
 
         });
     }

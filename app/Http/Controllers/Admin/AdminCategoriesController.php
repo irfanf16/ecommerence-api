@@ -108,6 +108,7 @@ class AdminCategoriesController extends Controller
             $validator = \Validator::make( $request->all(), [
                 'title'       => ['bail', 'required', 'string','unique:categories', 'max:100'],
                 'title_ar'       => ['bail', 'required', 'string','unique:categories', 'max:100'],
+                'title_es'       => ['bail', 'required', 'string','unique:categories', 'max:100'],
                 'description' => ['bail', 'max:500'],
             ]);
 
@@ -122,6 +123,7 @@ class AdminCategoriesController extends Controller
                 'title'       => $request->title,
                 'slug'       => $this->createSlug('categories',$request->title),
                 'title_ar'       => $request->title_ar,
+                'title_es'       => $request->title_es,
                 'description' => $request->description,
                 'featured'    => $request->featured == "on" ? 1 : 0,
                 'popular'     => $request->popular == "on" ? 1 : 0,
@@ -235,6 +237,7 @@ class AdminCategoriesController extends Controller
         $validator = \Validator::make( $request->all(), [
             'title'       => ['bail', 'required', 'string',Rule::unique('categories')->ignore($id), 'max:100'],
             'title_ar'       => ['bail', 'required', 'string',Rule::unique('categories')->ignore($id), 'max:100'],
+            'title_es'       => ['bail', 'required', 'string',Rule::unique('categories')->ignore($id), 'max:100'],
             'description' => ['bail', 'max:500'],
         ]);
 
@@ -249,6 +252,7 @@ class AdminCategoriesController extends Controller
             'title'       => $request->title,
 //            'slug'       => $this->createSlug('categories',$request->title),
             'title_ar'    => $request->title_ar,
+            'title_es'    => $request->title_es,
             'description' => $request->description,
             'featured'    => $request->featured == "on" ? 1 : 0,
             'popular'     => $request->popular == "on" ? 1 : 0,

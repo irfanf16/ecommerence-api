@@ -18,11 +18,13 @@ class Brand extends Model
     protected $fillable = [
         'name',
         'name_ar',
+        'name_es',
         'description',
         'logo_image',
         'cover_image',
         'featured',
-        'status'
+        'status',
+        'slug'
     ];
 
     protected $hidden = [

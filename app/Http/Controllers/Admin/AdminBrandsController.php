@@ -111,6 +111,7 @@ class AdminBrandsController extends Controller
             // 'category_id' => ['bail', 'required', 'integer'],
             'name'        => ['bail', 'required', 'string', 'unique:brands', 'max:100'],
             'name_ar'        => ['bail', 'required', 'string', 'unique:brands', 'max:100'],
+            'name_es'        => ['bail', 'required', 'string', 'unique:brands', 'max:100'],
             'description' => ['bail', 'max:1000'],
         ]);
 
@@ -125,6 +126,7 @@ class AdminBrandsController extends Controller
             'name'        => $request->name,
             'slug'       => $this->createSlug('brands',$request->title),
             'name_ar'        => $request->name_ar,
+            'name_es'        => $request->name_es,
             'description' => $request->description,
             'featured'    => $request->featured == "on" ? 1 : 0,
             'status'      => $request->status == "on" ? 1 : 0,
@@ -241,6 +243,7 @@ class AdminBrandsController extends Controller
             // 'category_id' => ['bail', 'required', 'integer'],
             'name'=> ['bail', 'required', 'string', Rule::unique('brands')->ignore($id), 'max:100'],
             'name_ar'=> ['bail', 'required', 'string', Rule::unique('brands')->ignore($id), 'max:100'],
+            'name_es'=> ['bail', 'required', 'string', Rule::unique('brands')->ignore($id), 'max:100'],
             'description' => ['bail', 'max:1000'],
         ]);
 
@@ -256,6 +259,7 @@ class AdminBrandsController extends Controller
             'name'        => $request->name,
 //            'slug'       => $this->createSlug('brands',$request->title),
             'name_ar'        => $request->name_ar,
+            'name_es'        => $request->name_es,
             'description' => $request->description,
             'featured'    => $request->featured == "on" ? 1 : 0,
             'status'      => $request->status == "on" ? 1 : 0,

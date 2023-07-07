@@ -15,7 +15,7 @@ class CountriesTableSeeder extends Seeder
      */
     public function run()
     {
-        // FORCE TRUNCATE TABLE -- FOR ENABLED FOREIGN KEY CONSTRAINT 
+        // FORCE TRUNCATE TABLE -- FOR ENABLED FOREIGN KEY CONSTRAINT
         DB::statement('SET FOREIGN_KEY_CHECKS=0;');
         DB::table('countries')->truncate();
         DB::statement('SET FOREIGN_KEY_CHECKS=1;');
@@ -25,7 +25,7 @@ class CountriesTableSeeder extends Seeder
             [
                 [
                     'id'   => 1,
-                    'name' => 'Qatar',
+                    'name' => 'Pakistan',
                     'status' => 1,
                     'created_at' => Carbon::now()->format('Y-m-d H:i:s'),
                     'updated_at' => Carbon::now()->format('Y-m-d H:i:s')

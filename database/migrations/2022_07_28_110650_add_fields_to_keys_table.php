@@ -16,6 +16,8 @@ class AddFieldsToKeysTable extends Migration
         Schema::table('keys', function (Blueprint $table) {
             $table->string('name_ar')->nullable()->after('name');
             $table->string('slug')->nullable()->after('name');
+            $table->string('name_es')->nullable()->after('slug');
+
         });
     }
 

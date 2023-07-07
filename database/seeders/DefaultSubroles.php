@@ -16,7 +16,7 @@ class DefaultSubroles extends Seeder
      */
     public function run()
     {
-        // FORCE TRUNCATE TABLE -- FOR ENABLED FOREIGN KEY CONSTRAINT 
+        // FORCE TRUNCATE TABLE -- FOR ENABLED FOREIGN KEY CONSTRAINT
         DB::statement('SET FOREIGN_KEY_CHECKS=0;');
         SubRole::truncate();
         DB::statement('SET FOREIGN_KEY_CHECKS=1;');
@@ -24,13 +24,13 @@ class DefaultSubroles extends Seeder
         SubRole::insert([
             [
                 'id' => 1,
-                'name' => 'Storak Admin',
+                'name' => 'Admin',
                 'owner_id' => 0,
                 'permissions' => json_encode(config('modules-beta.admin'))
             ],
             [
                 'id' => 2,
-                'name' => 'Vendor Admin',
+                'name' => 'Admin',
                 'owner_id' => 0,
                 'permissions' => json_encode(config('modules-beta.vendor'))
             ]

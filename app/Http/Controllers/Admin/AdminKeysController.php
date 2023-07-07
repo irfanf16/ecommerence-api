@@ -5,10 +5,13 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Attribute;
 use App\Models\Key;
+use App\Traits\ApiDataGenerate;
 use Illuminate\Http\Request;
 
 class AdminKeysController extends Controller
 {
+    use ApiDataGenerate;
+
     /**
      * Display a listing of the resource.
      *
@@ -17,7 +20,7 @@ class AdminKeysController extends Controller
     public function index(Request $request)
     {
         try {
-            
+
         $keys = Key::query()
         ->when($request->has('search') && $request->filled('search'), function ($query) use ($request) {
             $query->where('name', 'LIKE', '%' . $request->search . "%");
@@ -40,7 +43,7 @@ class AdminKeysController extends Controller
                 'status'    => 100,
                 'message'   => "something went wrong",
                 'exception' => $e->getMessage()
-            ]);  
+            ]);
         }
 
     }
@@ -73,6 +76,7 @@ class AdminKeysController extends Controller
         $validator = \Validator::make($request->all(), [
             'name' => 'bail|required|string|unique:keys|max:100',
             'name_ar' => 'bail|required|string|unique:keys|max:100',
+            'name_es' => 'bail|required|string|unique:keys|max:100',
 
         ]);
 
@@ -86,7 +90,8 @@ class AdminKeysController extends Controller
         $formData = [
             'name' => $request->name,
             'name_ar' => $request->name_ar,
-
+            'name_es' => $request->name_es,
+            'slug'    => $this->createSlug('keys',$request->name),
             'status' => $request->status == "on" ? 1 : 0,
         ];
 
@@ -143,7 +148,7 @@ class AdminKeysController extends Controller
     {
         $key = Key::where('id', $id)->orderBy('name', 'ASC')->with('attributes')->first();
         $attributes = Attribute::orderBy('title', 'ASC')->get();
-        
+
         return response()->json([
             "status" => 200,
             "attributes" => $attributes,
@@ -165,6 +170,7 @@ class AdminKeysController extends Controller
         $validator = \Validator::make($request->all(), [
             'name' => 'bail|required|string|max:100',
             'name_ar' => 'bail|required|string|max:100',
+            'name_es' => 'bail|required|string|max:100',
 
         ]);
 
@@ -178,7 +184,7 @@ class AdminKeysController extends Controller
         $formData = [
             'name' => $request->name,
             'name_ar' => $request->name_ar,
-
+            'name_es' => $request->name_es,
             'status' => $request->status == "on" ? 1 : 0,
         ];
 
@@ -235,9 +241,9 @@ class AdminKeysController extends Controller
     public function changeStatus(Request $request)
     {
         try {
-         
+
            $keyStatus  =  Key::where('id', $request->key_id)->update(['status' => $request->status]);
-            
+
             return response()->json(['keyStatus' > $keyStatus, 'status' => 200,'success' => 'Status changed successfully.']);
         } catch (\Exception $e) {
             return response()->json([

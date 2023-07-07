@@ -14,6 +14,7 @@ class Key extends Model
     protected $fillable = [
         'name',
         'name_ar',
+        'name_es',
         'slug',
         'status',
     ];

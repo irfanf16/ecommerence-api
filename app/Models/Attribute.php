@@ -16,6 +16,7 @@ class Attribute extends Model
     protected $fillable = [
         'title',
         'title_ar',
+        'title_es',
         'slug',
         'status',
     ];

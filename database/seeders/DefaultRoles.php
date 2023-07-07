@@ -29,27 +29,27 @@ class DefaultRoles extends Seeder
                 'email' => "admin@gmail.com",
                 'password'=> bcrypt('12345678'),
                 'country_code' => '',
-                'mobile' => '+923035190106',
+                'mobile' => '',
             ],
             [
                 'id' => 2,
                 'name' => 'Default Vendor',
                 'role_id' => 2,
-                'email' => "vendor1.tester@gmail.com",
+                'email' => "vendor@gmail.com",
                 'password'=> bcrypt('12345678'),
                 'country_code' => '',
 
-                'mobile' => '+923035190107',
+                'mobile' => '',
             ],
             [
                 'id' => 3,
                 'name' => 'Default Customer',
                 'role_id' => 3,
-                'email' => "buyer1.storak@gmail.com",
+                'email' => "user@gmail.com",
                 'password'=> bcrypt('12345678'),
                 'country_code' => '',
 
-                'mobile' => '+923035190108',
+                'mobile' => '',
             ]
         ]);
     }
