@@ -20,9 +20,10 @@ class HomeScreenResource extends JsonResource
             'id' => $this['id'],
             'slug' => $this['slug'],
             'title' => $lang == 'ar' ? $this['title_ar'] : $this['title'],
+            'logo_image' => $this['logo_image'] ,
             'keyword' => $lang == 'ar' ? $this['title_ar'] : $this['title'],
             'model_type' => 'Category',
-            'brands' => BrandResource::collection($this['brands']),
+//            'brands' => BrandResource::collection($this['brands']),
             'subcategories' => HomeScreenSubCategoryResource::collection($this['subcategories']),
         ];
     }

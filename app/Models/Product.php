@@ -156,6 +156,10 @@ class Product extends Model
     {
         return $this->hasMany(ProductImage::class, 'product_id', 'id');
     }
+    public function image()
+    {
+        return $this->hasOne(ProductImage::class, 'product_id', 'id');
+    }
 
 
     /*

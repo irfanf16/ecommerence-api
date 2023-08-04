@@ -37,6 +37,7 @@ class ProductResource extends JsonResource
             'category'=>CategoryResource::make($this['category']),
             'brand'=>BrandResource::make($this['brand']),
             'first_variant'=>FirstVariantResource::make($this['firstVariant']),
+            'image'=>$this['image']
         ];
     }
 }

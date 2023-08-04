@@ -23,7 +23,7 @@ class SubCategoryResource extends JsonResource
             'keyword' => $lang == 'ar' ? $this['title_ar'] : $this['title'],
             'model_type' => 'SubCategory',
             'products_count'=>$this['products_count'],
-
+            'childCategories' => ChildCategoryResource::collection($this['childcategories'])
         ];
     }
 }

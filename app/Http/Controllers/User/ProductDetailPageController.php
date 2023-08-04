@@ -4,6 +4,8 @@ namespace App\Http\Controllers\User;
 
 use App\Http\Controllers\Controller;
 use App\Http\Resources\ProductDetailResource;
+use App\Http\Resources\ProductResource;
+use App\Models\WebsiteBanner;
 use Illuminate\Http\Request;
 
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -95,6 +97,65 @@ class ProductDetailPageController extends Controller
             return response()->json([
                 'status' => 200,
                 'product' => $product_details,
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                "status" => 100,
+                "errors" => $e->getMessage()
+            ]);
+        }
+
+    }
+    public function productDetailBySlug(Request $request,$slug)
+    {
+        try {
+            $store_id = $request->store_id;
+
+            $product_details = Product::with('category:id,title,slug,title_ar')
+                ->with('subcategory:id,title,slug,title_ar')
+                ->with('childcategory:id,title,slug,title_ar')
+                ->with('brand')
+                ->with('firstVariant')
+                ->with('variants.variantAttributes', function ($query) {
+                    $query->with('attributeDetail:id,slug,title,title_ar');
+                    $query->with('keyDetail:id,slug,name,name_ar');
+                })
+                ->with('productAttributes', function ($query) {
+                    $query->with('attributeDetail:id,slug,title,title_ar');
+                    $query->with('keyDetail:id,slug,name,name_ar');
+                })
+                ->with('images')
+                ->withCount('mostSoldProducts')
+                ->withCount('mostWishlistProducts')
+                ->where('slug', $slug)->first();
+
+            // INCREMENT PRODUCT-VIEWS COUNT
+            $product_details->increment('views', 1);
+            $product_details = ProductDetailResource::make($product_details);
+
+            $related_products = Product::with('firstVariant','image')
+                ->whereHas('firstVariant', function ($query) {
+                    $query->where('quantity', '>=', 1)->where('availability', 1);
+                })
+                ->select('id', 'name', 'name_ar', 'slug', 'primary_image', 'brand_id', 'likes', 'views', 'sales', 'reports', 'total_reviews', 'avg_rating')
+                ->where([
+                    'status' => 1,
+                ])
+                ->where('store_id', $store_id)
+
+                ->inRandomOrder()
+                ->take(4)
+                ->get();
+            $random_banner= WebsiteBanner::where('status', 1)
+                ->inRandomOrder()
+                ->first();
+            $related_products = ProductResource::collection($related_products);
+            return response()->json([
+                'status' => 200,
+                'product' => $product_details,
+                'related_products' => $related_products,
+                'random_banner' => $random_banner,
             ]);
 
         } catch (\Exception $e) {

@@ -80,7 +80,7 @@ class ProductDetailResource extends JsonResource
             'variants' => ProductVariants::collection($this['variants']),
             'product_attributes' => ProductAttributes::collection($this['productAttributes']),
             'images' => ProductDetailImages::collection($this['images']),
-            'store' => ProductDetailStoreResource::make($this['store'])
+//            'store' => ProductDetailStoreResource::make($this['store'])
         ];
     }
 }

@@ -10,8 +10,11 @@ use App\Http\Resources\FeaturedSellersResource;
 use App\Http\Resources\FeaturedUserStoreResource;
 use App\Http\Resources\HomeScreenResource;
 use App\Http\Resources\ProductResource;
+use App\Http\Resources\SubCategoryResource;
 use App\Models\AppSetting;
 use App\Models\Brand;
+use App\Models\SubCategory;
+use App\Models\WebsiteBanner;
 use Illuminate\Http\Request;
 
 use App\Models\Category;
@@ -27,181 +30,132 @@ class AppHomeScreenController extends Controller
     | Get Listing of Mobile App Home Screen All Sections
     |=======================================================================
     */
-    public function index()
+    public function index(Request $request)
     {
-        try {
-            $covers = MobileCover::where('status', 1)
-                ->select('id', 'image')
-                ->inRandomOrder()
-                ->get();
+        $store_id = $request->store_id;
 
-            $categories = Category::where('status', 1)
-                ->select('id', 'title', 'title_ar', 'slug', 'logo_image', 'mobile_image')
-                ->take(8)
-                ->inRandomOrder()
-                ->get();
-            $categories = CategoryResource::collection($categories);
-            $recommended_products = Product::with('firstVariant')
-                ->with('brand:id,name,name_ar,slug')
-                ->whereHas('firstVariant',function ($query){
-                    $query->where('quantity','>=',1)->where('availability',1);
-                })
-                ->whereRelation('store', 'is_verified', '=', 1)->whereRelation('store', 'status', '=', 1)
-                ->where('status', 1)
-                ->select('id', 'name', 'name_ar', 'slug', 'primary_image', 'brand_id', 'likes', 'views', 'sales', 'reports', 'total_reviews', 'avg_rating')
-                ->take(20)
-                ->inRandomOrder()
-                ->get();
-            $recommended_products = ProductResource::collection($recommended_products);
-            $sod_products = Product::with('firstVariant')
-                ->with('brand:id,name,name_ar,slug')
-                ->whereHas('firstVariant',function ($query){
-                    $query->where('quantity','>=',1)->where('availability',1);
-                })
-                ->select('id', 'name', 'name_ar', 'slug', 'primary_image', 'brand_id', 'likes', 'views', 'sales', 'reports', 'total_reviews', 'avg_rating')
-                ->where([
-                    'status' => 1,
-                ])
-                ->whereRelation('store', 'is_verified', '=', 1)->whereRelation('store', 'status', '=', 1)
-                ->inRandomOrder()
-                ->take(6)
-                ->get();
-            $sod_products = ProductResource::collection($sod_products);
-            $featured_products = Product::with('firstVariant')
-                ->with('brand:id,name,name_ar,slug')
-                ->whereHas('firstVariant',function ($query){
-                    $query->where('quantity','>=',1)->where('availability',1);
-                })
-                ->select('id', 'name', 'name_ar', 'slug', 'primary_image', 'brand_id', 'likes', 'views', 'sales', 'reports', 'total_reviews', 'avg_rating')
-                ->where([
-                    'status' => 1,
-                    'featured' => 1
-                ])
-                ->whereRelation('store', 'is_verified', '=', 1)->whereRelation('store', 'status', '=', 1)
-                ->inRandomOrder()
-                ->take(20)
-                ->get();
-            $featured_products = ProductResource::collection($featured_products);
+//        try {
+        $covers = WebsiteBanner::where('status', 1)
+//            ->select('id', 'image')
+            ->inRandomOrder()
+            ->get();
 
-            $mega_deals = Product::with('firstVariant')
-                ->with('brand:id,name,name_ar,slug')
-                ->whereHas('firstVariant',function ($query){
-                    $query->where('quantity','>=',1)->where('availability',1);
-                })
-                ->where('status', 1)
-                ->whereRelation('store', 'is_verified', '=', 1)->whereRelation('store', 'status', '=', 1)
-                ->select('id', 'name', 'name_ar', 'slug', 'primary_image', 'brand_id', 'likes', 'views', 'sales', 'reports', 'total_reviews', 'avg_rating')
-                ->take(7)
-                ->inRandomOrder()
-                ->get();
-            $mega_deals = ProductResource::collection($mega_deals);
+        $categories = Category::where('status', 1)
+            ->with('subcategories', function ($query) {
+                $query->with('childcategories', function ($query) {
+                    $query->inRandomOrder()->where('status', 1)->limit(10);
+                })->where('status', 1)->limit(8);
+            })
+            ->select('id', 'title', 'title_ar', 'slug', 'logo_image', 'mobile_image')
+            ->take(20)
+            ->get();
 
-            $top_selling_products = Product::with('firstVariant')
-                ->with('brand:id,name,name_ar,slug')
-                ->whereHas('firstVariant',function ($query){
-                    $query->where('quantity','>=',1)->where('availability',1);
-                })
-                ->where('status', 1)
-                ->whereRelation('store', 'is_verified', '=', 1)->whereRelation('store', 'status', '=', 1)
-                ->select('id', 'name', 'name_ar', 'slug', 'primary_image', 'brand_id', 'likes', 'views', 'sales', 'reports', 'total_reviews', 'avg_rating')
-                ->take(7)
-                ->inRandomOrder()
-                ->get();
-            $top_selling_products = ProductResource::collection($top_selling_products);
+        $categories = CategoryResource::collection($categories);
 
-            $featured_sellers = Store::with('user:id,name,status')
-                ->whereRelation('user', 'status', '=', 1)
-                ->where('featured', 1)
-                ->inRandomOrder()
-                ->take(10)
-                ->get();
-            $featured_sellers = FeaturedSellersResource::collection($featured_sellers);
-            $user_stores = UserStore::where([
-                'status' => true,
-                'featured' => true,
+        $brands = Brand::select('id', 'name', 'name_ar', 'logo_image', 'slug')
+            ->limit(12)
+            ->where(['status'=> 1,'featured'=>1])
+            ->inRandomOrder()
+            ->get();
+        $brands = BrandResource::collection($brands);
+
+        $random_banner= WebsiteBanner::where('status', 1)
+            ->inRandomOrder()
+            ->first();
+
+        $top_featured_subcategories=SubCategory::where(['status'=>1,'featured'=>1])->take(3)->inRandomOrder()->get();
+
+        $top_featured_subcategories=SubCategoryResource::collection($top_featured_subcategories);
+
+        $featured_products = Product::with('firstVariant','image')
+            ->whereHas('firstVariant', function ($query) {
+                $query->where('quantity', '>=', 1)->where('availability', 1);
+            })
+            ->select('id', 'name', 'name_ar', 'slug', 'primary_image', 'brand_id', 'likes', 'views', 'sales', 'reports', 'total_reviews', 'avg_rating')
+            ->where([
+                'status' => 1,
+                'featured' => 1
             ])
-                ->withCount('collections')
-                ->inRandomOrder()
-                ->with([
-                    'collections',
-                    'likers:id,name,profile_image',
-                    'followers:id,name,profile_image'
-                ])
-                ->get();
-            $user_stores = FeaturedUserStoreResource::collection($user_stores);
-            $brands = Brand::select('id', 'name', 'name_ar', 'logo_image', 'slug')
-                ->limit(12)
-                ->where('status', 1)
-                ->inRandomOrder()
-                ->get();
-            $brands = BrandResource::collection($brands);
-            $women_category = Category::where('title', '=', 'Women Store')->where('status', 1)
-                ->with('brands', function ($query) {
-                    $query->inRandomOrder()->where('status', 1)->limit(6);
-                })
-                ->with('subcategories', function ($query) {
-                    $query->with('childcategories', function ($query) {
-                        $query->where('status', 1)->limit(6);
-                    })->limit(2);
-                })
-                ->select('id', 'title', 'title_ar', 'banner_image')
-                ->first();
-            $man_category = Category::where('title', '=', 'Men Store')->where('status', 1)
-                ->with('brands', function ($query) {
-                    $query->inRandomOrder()->where('status', 1)->limit(6);
-                })
-                ->with('subcategories', function ($query) {
-                    $query->with('childcategories', function ($query) {
-                        $query->where('status', 1)->limit(6);
-                    })->limit(2);
-                })
-                ->select('id', 'title', 'title_ar', 'slug', 'banner_image')
-                ->first();
-            $kids_store = Category::where('title', '=', 'Kids Store')->where('status', 1)
-                ->with('brands', function ($query) {
-                    $query->inRandomOrder()->where('status', 1)->limit(6);
-                })
-                ->with('subcategories', function ($query) {
-                    $query->with('childcategories', function ($query) {
-                        $query->inRandomOrder()->where('status', 1)->limit(6);
-                    })->inRandomOrder()->where('status', 1)->limit(2);
-                })
-                ->select('id', 'title', 'title_ar', 'slug', 'banner_image')
-                ->first();
+            ->where('store_id', $store_id)
 
-            $shop_by_category = [
-                'men_store' => HomeScreenResource::make($man_category),
-                'women_store' => HomeScreenResource::make($women_category),
-                'kids_store' => HomeScreenResource::make($kids_store),
-            ];
+//                ->whereRelation('store', 'is_verified', '=', 1)->whereRelation('store', 'status', '=', 1)
+            ->inRandomOrder()
+            ->take(8)
+            ->get();
 
-            $appSetting = AppSetting::where('shortcode', 'home')->select('id', 'value1', 'value2')->get();
+        $featured_products = ProductResource::collection($featured_products);
 
-            return response()->json([
-                'status' => 200,
-                'appSetting' => $appSetting,
-                'covers' => $covers,
-                'categories' => $categories,
-                'recommended_products' => $recommended_products,
-                'sod_products' => $sod_products,
-                'featured_products' => $featured_products,
-                'mega_deals' => $mega_deals,
-                'top_selling_products' => $top_selling_products,
-                'featured_sellers' => $featured_sellers,
-                'recommended_stores' => $user_stores,
-                'brands' => $brands,
-                'shop_by_category' => $shop_by_category,
-            ]);
 
-        } catch (\Throwable $th) {
+        $popular_products = Product::with('firstVariant','image')
+            ->whereHas('firstVariant', function ($query) {
+                $query->where('quantity', '>=', 1)->where('availability', 1);
+            })
+//                ->whereRelation('store', 'is_verified', '=', 1)->whereRelation('store', 'status', '=', 1)
+            ->where('status', 1)
+            ->where('store_id', $store_id)
+            ->select('id', 'name', 'name_ar', 'slug', 'primary_image', 'brand_id', 'likes', 'views', 'sales', 'reports', 'total_reviews', 'avg_rating')
+            ->take(8)
+            ->inRandomOrder()
+            ->get();
 
-            //throw $th;
-            return response()->json([
-                "status" => 100,
-                "message" => "Sorry! Something Went Wrong.",
-                "exceptions" => $th
-            ]);
-        }
+        $popular_products = ProductResource::collection($popular_products);
+
+        $new_added_products = Product::with('firstVariant','image')
+            ->whereHas('firstVariant', function ($query) {
+                $query->where('quantity', '>=', 1)->where('availability', 1);
+            })
+            ->select('id', 'name', 'name_ar', 'slug', 'primary_image', 'brand_id', 'likes', 'views', 'sales', 'reports', 'total_reviews', 'avg_rating')
+            ->where([
+                'status' => 1,
+            ])
+            ->where('store_id', $store_id)
+//                ->whereRelation('store', 'is_verified', '=', 1)->whereRelation('store', 'status', '=', 1)
+            ->inRandomOrder()
+            ->take(8)
+            ->get();
+        $new_added_products = ProductResource::collection($new_added_products);
+
+        $new_arrival_products = Product::with('firstVariant','image')
+            ->whereHas('firstVariant', function ($query) {
+                $query->where('quantity', '>=', 1)->where('availability', 1);
+            })
+            ->select('id', 'name', 'name_ar', 'slug', 'primary_image', 'brand_id', 'likes', 'views', 'sales', 'reports', 'total_reviews', 'avg_rating')
+            ->where([
+                'status' => 1,
+            ])
+            ->where('store_id', $store_id)
+//                ->whereRelation('store', 'is_verified', '=', 1)->whereRelation('store', 'status', '=', 1)
+            ->inRandomOrder()
+            ->take(8)
+            ->get();
+
+        $new_arrival_products = ProductResource::collection($new_arrival_products);
+
+
+
+
+        return response()->json([
+            'status' => 200,
+            'covers' => $covers,
+            'categories' => $categories,
+            'brands' => $brands,
+            'random_banner' => $random_banner,
+            'top_featured_subcategories' => $top_featured_subcategories,
+            'featured_products' => $featured_products,
+            'popular_products' => $popular_products,
+            'new_added_products' => $new_added_products,
+            'new_arrival_products' => $new_arrival_products,
+        ]);
+
+//        } catch (\Throwable $th) {
+//
+//            //throw $th;
+//            return response()->json([
+//                "status" => 100,
+//                "message" => "Sorry! Something Went Wrong.",
+//                "exceptions" => $th
+//            ]);
+//        }
 
     }
 

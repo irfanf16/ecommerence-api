@@ -197,9 +197,23 @@ Route::group(['prefix' => '/', 'middleware' => []], function () {
 
 /*
 |====================================================================
+| My website API ROUTES
+|====================================================================
+*/
+
+Route::group(['prefix' => 'website/', 'middleware' => []], function () {
+
+    Route::get('homescreen', [AppHomeScreenController::class, 'index']);
+    Route::get('product/detail/{slug}', [ProductDetailPageController::class, 'productDetailBySlug']);
+
+});
+/*
+|====================================================================
 | MOBILE API ROUTES
 |====================================================================
 */
+
+
 Route::group(['prefix' => 'app/', 'middleware' => []], function () {
 
     // HOME-SCREEN

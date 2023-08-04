@@ -22,7 +22,8 @@ class CategoryResource extends JsonResource
             'keyword'=>$lang=='ar' ? $this['title_ar']: $this['title'],
             'logo_image'=>$this['logo_image'],
             'mobile_image'=>$this['mobile_image'],
-            'model_type'=>'Category'
+            'model_type'=>'Category',
+            'subCategories'=>SubCategoryResource::collection($this['subcategories'])
         ];
     }
 }
