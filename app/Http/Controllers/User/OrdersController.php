@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\User;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\CartResource;
 use App\Http\Resources\OrderDetailResource;
 use App\Mail\SendOrderStatusEmail;
 use App\Mail\UserAccount;
@@ -560,10 +561,183 @@ class OrdersController extends Controller
 
     }
 
+    public function orderPlaceFromWebsite(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'shipping_address_id' => 'nullable|integer',
+            'delivery_slot_id' => 'nullable|integer',
+            'payment_method' => 'required',
+            'billing_status' => 'nullable',
+//            user informations
+
+            'user_default_address' => 'nullable|boolean',
+            'user_zone_no' => 'nullable|string|max:20',
+            'user_street_no' => 'nullable|string|max:20',
+            'user_building_no' => 'nullable|string|max:20',
+            'user_floor_no' => 'nullable|string|max:20',
+            'user_appartment_no' => 'nullable|string|max:20',
+            'user_address' => 'nullable|max:500',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'status' => 100,
+                'errors' => $validator->errors()->all()
+            ]);
+        }
+        DB::beginTransaction();
+        try {
+
+            $user = Auth::user();
+            $user_id = $user->id;
+
+            // address create
+
+            $addressData = [
+                'user_id' => $user_id,
+                'country_id' => $request->country_id ?? 1,
+                'city_id' => $request->city_id ?? 1,
+                'address_type_id' => $request->address_type_id ?? 1,
+                'user_default_address' => $request->user_default_address ?? 0,
+                'user_zone_no' => $request->user_zone_no ?? "Not Provided",
+                'user_street_no' => $request->user_street_no ?? "Not Provided",
+                'user_building_no' => $request->user_building_no ?? "Not Provided",
+                'user_floor_no' => $request->user_floor_no ?? "Not Provided",
+                'user_appartment_no' => $request->user_appartment_no ?? "Not Provided",
+                'user_address' => $request->user_address ?? "Not Provided",
+            ];
+
+            $user_address = UserAddress::create($addressData);
+            $cart_items = CartItem::where('user_id', Auth::id())
+                ->with([
+                    'productDetail:id,name,name_ar,store_id,primary_image,slug',
+                    'productDetail.store:id,store_name,store_name_ar,slug'
+                ])
+                ->with('variantDetail')
+                // ->with('variantDetail.productAttributes', function($query){
+                //     $query->with('attributeDetail:id,title');
+                //     $query->with('keyDetail:id,name');
+                // })
+                ->get()
+                ->makeHidden('user_id');
+
+            $fulfillment = Fulfillment::first();
+            $subTotal = 0;
+            $total = 0;
+            foreach ($cart_items as $item) {
+
+                if ($item->variant_detail){
+                    $subTotal += $item->variant_detail->special_price * $item->quantity;
+                }
+
+            }
+            $total = $subTotal;
+
+            // GENERATE ORDER NUMBER
+            $order_number = $this->generateOrderNumber();
+
+            $formData = [
+                'order_no' => $order_number,
+                'user_id' => $user_id,
+                'billing_address_id' => $user_address->id,
+                'shipping_address_id' => $user_address->id,
+                'delivery_slot_id' => $request->delivery_slot_id ?? null,
+                'packages_bill' => $total,
+                'discount' => 0,
+                'final_bill' => $total,
+                'payment_method' => $request->payment_method,
+                'billing_status' => $request->billing_status ?? 1,
+            ];
+
+
+            // STORE ORDER DETAILS
+            $new_order = new Order();
+            $order_details = $new_order->create($formData);
+
+            $package_number = $this->generatePackageNumber();
+
+            $ordered_package = new OrderPackage();
+            $ordered_package->order_id = $order_details->id;
+            $ordered_package->package_no = $package_number;
+            $ordered_package->store_id = $request->store_id;
+            $ordered_package->fulfillment_id = $fulfillment->id ?? 0;
+            $ordered_package->order_status_id = 1;
+            $ordered_package->fulfillment_charges = $fulfillment->charges ?? 0;
+            $ordered_package->package_bill = $total;
+            $ordered_package->save();
+
+            foreach ($cart_items as $item) {
+
+                $productVariant = ProductVariant::find($item['product_variant_id']);
+                $product = Product::with('childcategory')->find($productVariant->product_id);
+
+                if (!$productVariant->availability || $productVariant->quantity == 0) {
+                    DB::rollback();
+                    return response()->json([
+                        "status" => 100,
+                        "errors" => $product->name . ' This product is out of Stock'
+                    ]);
+                }
+//                 **************  product variant quantity dec  ********************************
+                if (!$productVariant->quantity >= $item['quantity']) {
+                    DB::rollback();
+                    return response()->json([
+                        "status" => 100,
+                        "errors" => $product->name . ' This product is insufficient Stock'
+                    ]);
+                }
+                $price = $productVariant->price;
+                $productVariant->quantity = $productVariant->quantity - $item['quantity'];
+                $productVariant->save();
+                $package_item = new OrderPackageItem();
+                $package_item->order_package_id = $ordered_package->id;
+                $package_item->product_id = $item['product_id'];
+                $package_item->product_variant_id = $item['product_variant_id'];
+                $package_item->quantity = $item['quantity'];
+                $package_item->price = $price;
+                $package_item->save();
+                $item->delete();
+            }
+
+            // LOG NEWLY CREATED ORDER-PACKAGE STATUS
+            $log_order = new OrderPackageHistory();
+            $log_order->order_package_id = $ordered_package->id;
+            $log_order->order_status_id = 1;
+            $log_order->save();
+
+            // STORE NEW NOTIFICATION
+            $notification = new Notification();
+            $notification->store_id = $request->store_id; // VENDOR-ID
+            $notification->message = "New Order Received - $order_details->order_no";
+            $notification->link = "vendor/orders/$ordered_package->id";
+            $notification->icon = "order";
+            $notification->status = false;
+            $notification->save();
+
+            DB::commit();
+
+            return response()->json([
+                'status' => 200,
+                'message' => "Congratulations, Your Order is Successfully Placed",
+            ]);
+
+
+        } catch (\Exception $e) {
+            DB::rollback();
+
+            return response()->json([
+                "status" => 100,
+                "errors" => $e->getMessage()
+            ]);
+        }
+
+
+    }
+
     public function orderCancel(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'order_id'=>'required|integer',
+            'order_id' => 'required|integer',
             'reason' => 'required',
             'comments' => 'nullable',
         ]);
@@ -574,7 +748,7 @@ class OrdersController extends Controller
                 'errors' => $validator->errors()->all()
             ]);
         }
-        $id=$request->order_id;
+        $id = $request->order_id;
 
         $order = Order::with('orderPackages', 'user')->findorfail($id);
 
@@ -633,7 +807,7 @@ class OrdersController extends Controller
     public function orderPackageCancel(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'order_package_id'=>'required|integer',
+            'order_package_id' => 'required|integer',
             'reason' => 'required',
             'comments' => 'nullable',
         ]);
@@ -647,7 +821,7 @@ class OrdersController extends Controller
 
         DB::beginTransaction();
         try {
-            $id=$request->order_package_id;
+            $id = $request->order_package_id;
             $orderPackage = OrderPackage::find($id);
             if ($orderPackage->order_status_id == 4) {
                 return response()->json([

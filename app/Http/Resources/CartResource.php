@@ -72,7 +72,7 @@ class CartProductDetailResource extends JsonResource
             'primary_image'=>$this['primary_image'],
             'slug'=>$this['slug'],
             'model_type'=>'Product',
-            'store'=>CartProductStoreResource::make($this['store'])
+//            'store'=>CartProductStoreResource::make($this['store'])
 
         ];
     }

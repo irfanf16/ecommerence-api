@@ -21,6 +21,7 @@ class FirstVariantResource extends JsonResource
             'product_id'=>$this['product_id'],
             'quantity'=>$this['quantity'],
             'availability'=>$this['availability'],
+            'seller_sku'=>$this['seller_sku'],
 
         ];
     }

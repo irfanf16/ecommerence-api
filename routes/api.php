@@ -289,6 +289,7 @@ Route::group(['prefix' => '/', 'middleware' => ['isBuyer']], function () {
 
     // USER ORDERS
     Route::post('orders', [OrdersController::class, 'placeOrder']);
+    Route::post('order/place', [OrdersController::class, 'orderPlaceFromWebsite']);
     Route::get('my-orders', [OrdersController::class, 'myOrders']);
     Route::get('my-order/{id}/detail', [OrdersController::class, 'orderDetail']);
     Route::post('order/cancel', [OrdersController::class, 'orderCancel']);

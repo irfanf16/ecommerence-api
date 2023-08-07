@@ -37,29 +37,11 @@ class CartItemsController extends Controller
                                     ->get()
                                     ->makeHidden('user_id');
             $cart_items=CartResource::collection($data);
-            $stores=[];
-            foreach ($cart_items as $item){
-                if ($request->header('lang')=='ar'){
-                    $stores[]=$item->productDetail->store->store_name_ar;
 
-                }else{
-                    $stores[]=$item->productDetail->store->store_name;
-                }
-            }
-//            $stores = $cart_items->pluck('productDetail')
-//                                 ->pluck('store')
-//                                 ->pluck('store_name')
-//                ->when($request->header('lang')=='ar',function ($query){
-//                    $query->pluck('store_name_ar');
-//                })
-            ;
-
-            $stores = array_unique($stores);
             return response()->json([
                 'status'     => 200,
                 'cart_items' => $cart_items,
                 'items_count'=> $cart_items->count(),
-                'stores'     => array_values($stores)
             ]);
 
         }
@@ -84,7 +66,14 @@ class CartItemsController extends Controller
         try {
 
             $variant = ProductVariant::where('id' , $request->product_variant_id)->first();
-
+            $addToCart=true;
+            if (CartItem::where(
+                [
+                    'user_id' => Auth::id(),
+                    'product_variant_id' => $request->product_variant_id
+                ])->exists()){
+                $addToCart=false;
+            }
             CartItem::updateOrCreate(
                 [
                     'user_id' => Auth::id(),
@@ -102,6 +91,7 @@ class CartItemsController extends Controller
             return response()->json([
                 'status' => 200,
                 'message'=> "A new item has been added to your Shopping Cart.",
+                'addToCart'=>$addToCart
             ]);
 
         }
@@ -215,6 +205,7 @@ class CartItemsController extends Controller
     */
     public function destroy($id)
     {
+
         try {
             if (is_array($id)){
                 CartItem::destroy($id);
@@ -222,10 +213,19 @@ class CartItemsController extends Controller
             else{
                 CartItem::findOrFail($id)->delete();
             }
-
+            $data = CartItem::where('user_id', Auth::id())
+                ->with([
+                    'productDetail:id,name,name_ar,store_id,primary_image,slug',
+                    'productDetail.store:id,store_name,store_name_ar,slug'
+                ])
+                ->with('variantDetail')
+                ->get()
+                ->makeHidden('user_id');
+            $cart_items=CartResource::collection($data);
             return response()->json([
                 'status' => 200,
                 'message'=> "The selected item has been removed from your Shopping Cart",
+                'cart_items'=>$cart_items
             ]);
 
         }

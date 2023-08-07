@@ -55,7 +55,7 @@ class WishlistItemsController extends Controller
     public function store(Request $request)
     {
         try {
-
+            $addToWishlist=false;
             $wishlist=WishlistItem::where([
                 'user_id'           => Auth::id(),
                 'product_id'        => $request->product_id,
@@ -63,12 +63,14 @@ class WishlistItemsController extends Controller
             ])->first();
 
             if ($wishlist){
-                $wishlist->delete();
+
                 return response()->json([
                     'status' => 200,
-                    'message'=> "The selected item has been removed from your Wishlist",
+                    'message'=> "The selected item has been already from your Wishlist",
+                    'addToWishlist'=>$addToWishlist
                 ]);
             }
+            $addToWishlist=true;
             WishlistItem::updateOrCreate(
                 [
                     'user_id' => Auth::id(),
@@ -83,6 +85,8 @@ class WishlistItemsController extends Controller
             return response()->json([
                 'status' => 200,
                 'message'=> "A new item has been added to your Wishlist",
+                'addToWishlist'=>$addToWishlist
+
             ]);
         }
         catch (\Exception $e) {

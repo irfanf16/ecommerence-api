@@ -3,7 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
+use App\Models\CartItem;
 use App\Models\Permission;
+use App\Models\WishlistItem;
 use Illuminate\Http\Request;
 
 use Illuminate\Support\Facades\Validator;
@@ -136,8 +138,8 @@ class JwtAuthController extends Controller
         $validator = Validator::make($request->all(), [
             'name' => 'required',
             'email' => 'required|email',
-            'country_code' => 'required|string|max:4',
-            'mobile' => 'required|string|min:8|max:11',
+//            'country_code' => 'required|string|max:4',
+//            'mobile' => 'required|string|min:8|max:11',
             'password' => 'required|min:8',
         ]);
 
@@ -151,7 +153,7 @@ class JwtAuthController extends Controller
         if ($user) {
             return response()->json([
                 'status' => 100,
-                'errors' => "Email already exists.!",
+                'errors' => ["Email already exists.!"],
             ]);
         }
 //        // VALIDATE DUPLICATE MOBILE NUMBER
@@ -167,8 +169,8 @@ class JwtAuthController extends Controller
         $user->role_id = 3; // USER
         $user->name = $request->name;
         $user->email = $request->email;
-        $user->country_code = $request->country_code;
-        $user->mobile = $request->mobile;
+        $user->country_code = ' ';
+        $user->mobile = ' ';
         $user->password = bcrypt($request->password);
         $user->registered_with = "signup";
         $is_user_created = $user->save();
@@ -211,8 +213,8 @@ class JwtAuthController extends Controller
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:100',
             'email' => 'required|email',
-            'country_code' => 'required|string|max:4',
-            'mobile' => 'required|string|min:8|max:11',
+//            'country_code' => 'required|string|max:4',
+//            'mobile' => 'required|string|min:8|max:11',
             'password' => 'required|min:8',
         ]);
 
@@ -544,22 +546,21 @@ class JwtAuthController extends Controller
         $user_addresses = UserAddress::where('user_id', Auth::id())->get();
         $user = User::with('store','user_store')->where('id', Auth::user()->id)->with('Subrole')->first();
         $user_role_permissions = User::with('role.permissions')->find(Auth::id());
-        // if($user->subrole == null){
-        //     $user['subrole'] = ['hell'];
-        // }
+
+        $user_cart_count=CartItem::where('user_id',Auth::id())->count();
+        $user_wishlist_count=WishlistItem::where('user_id',Auth::id())->count();
         return response()->json([
             'status' => 200,
             'message' => "Successfully logged In",
             'token' => $token,
             'token_type' => 'bearer',
             'expires_in' => auth()->factory()->getTTL() * 60,
-            // 'expires_in' => config('ttl'), // CUSTOMIZATION OF TOKEN-EXPIRE-TIME
             'user' => $user,
             'user_role_permissions' => $user_role_permissions->role,
-            'store' => $user->store,
-            'user_store' =>$user->user_store ? true : false,
             'user_addresses' => $user_addresses,
-            'notifications' => $notifications_count
+            'notifications' => $notifications_count,
+            'user_cart_count'=>$user_cart_count,
+            'user_wishlist_count'=>$user_wishlist_count,
         ]);
 
     }
