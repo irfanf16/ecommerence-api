@@ -105,6 +105,55 @@ class CartItemsController extends Controller
 
     }
 
+    public function productQuantityUpdate(Request $request)
+    {
+        try {
+
+            $quantityUpdate=false;
+            $variant = ProductVariant::where('id' , $request->product_variant_id)->first();
+            if ($variant->quantity >= $request->quantity){
+
+                CartItem::updateOrCreate(
+                    [
+                        'user_id' => Auth::id(),
+                        'product_variant_id' => $request->product_variant_id
+                    ],
+                    [
+                        'user_id'           => Auth::id(),
+                        'product_id'        => $request->product_id,
+                        'product_variant_id'=> $request->product_variant_id,
+                        'quantity'          => $request->quantity,
+                        'price'             => $variant->special_price,
+                    ]
+                );
+                $quantityUpdate=true;
+                return response()->json([
+                    'status' => 200,
+                    'message'=>'Quantity Update Successfully',
+                    'quantityUpdate'=>$quantityUpdate
+                ]);
+            }else{
+                return response()->json([
+                    'status' => 200,
+                    'message'=>'Quantity not Update',
+                    'quantityUpdate'=>$quantityUpdate,
+                    'maxQuantity'=>$variant->quantity
+                ]);
+            }
+
+
+        }
+        catch (\Exception $e) {
+
+            return response()->json([
+                "status" => 100,
+                "errors" => $e->getMessage()
+            ]);
+        }
+
+    }
+
+
 
 
     /*

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\User;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\CartResource;
 use Illuminate\Http\Request;
 
 use Illuminate\Support\Facades\Auth;
@@ -27,11 +28,11 @@ class WishlistItemsController extends Controller
                                             ->with('variantDetail')
                                             ->get()
                                             ->makeHidden('user_id');
+            $wishlist_items=CartResource::collection($wishlist_items);
 
             return response()->json([
                 'status'         => 200,
                 'wishlist_items' => $wishlist_items,
-                'items_count'    => $wishlist_items->count()
             ]);
 
         }

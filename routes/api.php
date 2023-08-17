@@ -301,6 +301,7 @@ Route::group(['prefix' => '/', 'middleware' => ['isBuyer']], function () {
     Route::post('cart-items/remove-multiple', [CartItemsController::class, 'removeMultipleItems']);
     Route::post('cart-items/empty', [CartItemsController::class, 'emptyCart']);
     Route::resource('cart-items', CartItemsController::class);
+    Route::post('cart-item-quantity-update', [CartItemsController::class,'productQuantityUpdate']);
     Route::post('cart-to-wishlist', [CartItemsController::class, 'cartToWishlist']);
 
     // USER WISHLIST
