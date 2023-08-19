@@ -116,10 +116,11 @@ class WishlistItemsController extends Controller
             else{
                 WishlistItem::findOrFail($id)->delete();
             }
-
+             $wishlist_count=WishlistItem::where('user_id',Auth::id())->count();
             return response()->json([
                 'status' => 200,
                 'message'=> "The selected item has been removed from your Wishlist",
+                'wishlist_count'=>$wishlist_count
             ]);
 
         }

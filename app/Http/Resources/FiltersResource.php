@@ -17,16 +17,7 @@ class FiltersResource extends JsonResource
 
         $lang=$request->header('lang');
 
-        if ($this->model_type=='Store'){
 
-            return [
-                'id'=>$this->id,
-                'slug'=>$this->slug,
-                'store_name'=>$lang=='ar' ? $this->store_name_ar: $this->store_name,
-                'keyword'=>$lang=='ar' ? $this->store_name_ar: $this->store_name,
-                'model_type'=>'Store'
-            ];
-        }
         if ($this->model_type=='Category'){
             return [
                 'id'=>$this->id,

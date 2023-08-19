@@ -324,36 +324,20 @@ class WebFiltersController extends Controller
     public function filteredProductsSlug(Request $request)
     {
 
-//        dd($request->header('lang'));
-//          return response()->json($request->all());
-//        try {
             $per_page_products = $request->perPageProducts;
-
-//            $brands = $request->brands;
-//            dd($brands);
             $brands = [];
+            $brnd=0;
             if ($request->brands) {
                 foreach ($request->brands as $brand) {
                     $data = Brand::where('slug', $brand)->first();
                     if ($data) {
                         $brands[] = $data->id;
                     }
-
                 }
             }
+        $brnd=$brands;
+            $store = $request->store_id;
 
-
-//            $stores = $request->stores;
-            $stores = [];
-            if ($request->stores) {
-                foreach ($request->stores as $store) {
-                    $data = Store::where('slug', $store)->first();
-                    if ($data) {
-                        $stores[] = $data->id;
-                    }
-
-                }
-            }
             $filter_requests = $request->except('perPageProducts', 'currentPage', 'page', 'brands', 'stores', 'min_price', 'max_price');
 
             $filters = [];
@@ -379,6 +363,7 @@ class WebFiltersController extends Controller
             }
 
             // CONDIONAL QUERYING
+
             $products = Product::with('category')
                 ->with('brand')
                 ->with('firstVariant')
@@ -419,11 +404,8 @@ class WebFiltersController extends Controller
                 })
                 ->when(!empty($brands), function ($query) use ($brands) {
                     $query->whereIn('brand_id', $brands);
-                })->when(!empty($stores), function ($query) use ($stores) {
-                    $query->whereIn('store_id', $stores);
-                })->when(empty($stores), function ($query) use ($stores) {
-                    $query->whereRelation('store','is_verified','=',1);
-                    $query->whereRelation('store','status','=',1);
+                })->when(!empty($store), function ($query) use ($store) {
+                    $query->where('store_id', $store);
                 })
                 ->orderBy('created_at', 'desc')
                 ->withCount('mostSoldProducts')
@@ -436,116 +418,7 @@ class WebFiltersController extends Controller
             $matching_filters = [];
 
 
-            if ($request->stores) {
-
-                if ($request->childcategory_id){
-                    $childcategory = ChildCategory::where('slug', $request->childcategory_id)->where('status',1)
-                        ->with(['category'=>function($query){
-                            $query->withCount('products');
-                        }, 'subcategory'=>function($query){
-                            $query->withCount('products');
-
-                        }])
-
-                        ->first();
-                    $category = $childcategory->category->toArray();
-                    $subcategory = $childcategory->subcategory->toArray();
-
-                    // empty matching_filters
-                    $matching_filters = [];
-
-                    // cat
-                    $matching_filters['category'] = $category;
-
-                    // subcat
-                    $matching_filters['category']['subcategories'] = [];
-                    array_push($matching_filters['category']['subcategories'], $subcategory);
-
-                    // childcat
-                    $matching_filters['category']['subcategories'][0]['childcategories'] = [];
-                    array_push($matching_filters['category']['subcategories'][0]['childcategories'], $childcategory);
-                    $matching_filters['category']=MatchingFiltersResource::make($matching_filters['category']);
-//                $brands = $childcategory->brands;
-
-                    $brands_id = DB::table('products')->where('childcategory_id', $childcategory->id)->distinct()->pluck('brand_id');
-                    $brands = Brand::whereIn('id', $brands_id)->select('id', 'name','name_ar','slug')->where('status',1)->get();
-                    $matching_filters['brands'] = BrandResource::collection($brands);
-
-                }elseif ($request->subcategory_id) {
-
-                    $subcategory = SubCategory::where('slug', $request->subcategory_id)->where('status',1)
-                        ->with(['category'=>function($query){
-                            $query->withCount('products');
-                        }, 'childcategories'=>function($query){
-                            $query->withCount('products');
-
-                        }])
-                        ->first();
-                    $category = $subcategory->category->toArray();
-
-                    // empty matching_filters
-                    $matching_filters = [];
-                    // cat
-                    $matching_filters['category'] = $category;
-
-                    // subcat
-                    $matching_filters['category']['subcategories'] = [];
-                    array_push($matching_filters['category']['subcategories'], $subcategory);
-                    $matching_filters['category']=MatchingFiltersResource::make($matching_filters['category']);
-
-                    // brands
-//                $brands = $subcategory->brands;
-
-                    $brands_id = DB::table('products')->where('subcategory_id', $subcategory->id)->distinct()->pluck('brand_id');
-                    $brands = Brand::whereIn('id', $brands_id)->select('id', 'name','name_ar','slug')->where('status',1)->get();
-                    $matching_filters['brands'] = BrandResource::collection($brands);
-
-                } elseif ($request->category_id) {
-                    $category = Category::where('slug', $request->category_id)->where('status',1)->with('subcategories.childcategories.brands', 'stores')
-                        ->with(['subcategories.childcategories'=>function($query){
-                            $query->withCount('products');
-                        }, 'subcategories'=>function($query){
-                            $query->withCount('products');
-
-                        }])
-                        ->withCount('products')
-                        ->first();
-
-                    // array_push($filters , $category);
-                    $matching_filters['category']=MatchingFiltersResource::make($category);
-                    $brands_id = DB::table('products')->where('category_id', $category->id)->distinct()->pluck('brand_id');
-                    $brands = Brand::whereIn('id', $brands_id)->select('id', 'name','name_ar','slug')->where('status',1)->get();
-
-                    // solo subcat
-                    /* $subcategories = $category->subcategories;
-
-                     // brands
-                     $brands = $subcategories->pluck('brands');
-                     $brands = $brands->flatten();*/
-
-                    $matching_filters['brands'] =  BrandResource::collection($brands);
-
-
-                }else{
-                    $store = Store::where('slug', $request->stores[0])->first();
-                    $categories_id = DB::table('products')->where('store_id', $store->id)->distinct()->pluck('category_id');
-                    $brands_id = DB::table('products')->where('store_id', $store->id)->distinct()->pluck('brand_id');
-                    $category = Category::with('subcategories.childcategories.brands', 'stores')
-                        ->with(['subcategories.childcategories'=>function($query){
-                            $query->withCount('products');
-                        }, 'subcategories'=>function($query){
-                            $query->withCount('products');
-
-                        }])
-                        ->withCount('products')
-                        ->where('status',1)->whereIn('id', $categories_id)->get();
-                    // array_push($filters , $category);
-                    $matching_filters['category'] = MatchingFiltersResource::collection($category);
-                    $brands = Brand::whereIn('id', $brands_id)->where('status',1)->get();
-                    $matching_filters['brands'] = BrandResource::collection($brands);
-                }
-
-            } elseif ($request->childcategory_id) {
+            if ($request->childcategory_id) {
                 $childcategory = ChildCategory::where('slug', $request->childcategory_id)->where('status',1)
                     ->with(['category'=>function($query){
                         $query->withCount('products');
@@ -615,18 +488,9 @@ class WebFiltersController extends Controller
 
                     }])
                     ->first();
-                // array_push($filters , $category);
                 $matching_filters['category']=MatchingFiltersResource::make($category);
                 $brands_id = DB::table('products')->where('category_id', $category->id)->distinct()->pluck('brand_id');
                 $brands = Brand::whereIn('id', $brands_id)->select('id', 'name','name_ar','slug')->where('status',1)->get();
-
-                // solo subcat
-               /* $subcategories = $category->subcategories;
-
-                // brands
-                $brands = $subcategories->pluck('brands');
-                $brands = $brands->flatten();*/
-
                 $matching_filters['brands'] =  BrandResource::collection($brands);
 
 
@@ -657,49 +521,15 @@ class WebFiltersController extends Controller
                 $matching_filters['category'] = MatchingFiltersResource::collection($category);
                 $brands_id = DB::table('products')->distinct()->pluck('brand_id');
                 $brands = Brand::whereIn('id', $brands_id)->select('id', 'name','name_ar','slug')->where('status',1)->get();
-
-//                $brands = Brand::select('id', 'name','name_ar','slug')->where('status',1)->get();
                 $matching_filters['brands'] = BrandResource::collection($brands);
             }
-//            dd($matching_filters);
+
             // applied filters
             $filters = [];
 
-            if ($request->stores) {
-                $stores = [];
-                if ($request->stores) {
-                    foreach ($request->stores as $store) {
-                        $data = Store::where('slug', $store)->first();
-                        if ($data) {
-                            $stores[] = $data->id;
-                        }
 
-                    }
-                }
-                $stores = Store::whereIn('id', $stores)->get();
-                foreach ($stores as $store) {
-
-                    array_push($filters, $store);
-                }
-
-            }
-
-            if ($request->brands) {
-                $brands = [];
-                if ($request->brands) {
-                    foreach ($request->brands as $brand) {
-                        $data = Brand::where('slug', $brand)->first();
-                        if ($data) {
-                            $brands[] = $data->id;
-                        }
-
-                    }
-                }
-                $brands = Brand::whereIn('id', $brands)->get();
-                foreach ($brands as $brand) {
-                    array_push($filters, $brand);
-                }
-
+            if (count($brnd) > 0) {
+                array_push($filters, $brnd);
             }
             if ($request->category_id) {
                 $category = Category::where('slug', $request->category_id)->first();
@@ -718,6 +548,7 @@ class WebFiltersController extends Controller
 
             }
 
+
             $filters=FiltersResource::collection($filters);
 //            filters end
 
@@ -728,15 +559,6 @@ class WebFiltersController extends Controller
                 'matching_filters' => $matching_filters
             ]);
 
-//        } catch (\Throwable $th) {
-//
-////            throw $th;
-//            return response()->json([
-//                "status" => 100,
-//                "message" => "Sorry! Something Went Wrong.",
-//                "exceptions" => $th
-//            ]);
-//        }
     }
 
 }
