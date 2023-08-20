@@ -40,16 +40,16 @@ class WebFiltersController extends Controller
 
             $categories = Category::with(['subcategories.childcategories'])
                 ->inRandomOrder()
-                ->where('status',1)
+                ->where('status', 1)
                 ->get();
-            $categories=MatchingFiltersResource::collection($categories);
-            $brands = Brand::inRandomOrder()->where('status',1)->get();
-            $brands=BrandResource::collection($brands);
-            $stores = Store::inRandomOrder()->where('status',1)->get();
-            $stores=SearchStoreResource::collection($stores);
+            $categories = MatchingFiltersResource::collection($categories);
+            $brands = Brand::inRandomOrder()->where('status', 1)->get();
+            $brands = BrandResource::collection($brands);
+            $stores = Store::inRandomOrder()->where('status', 1)->get();
+            $stores = SearchStoreResource::collection($stores);
             $fulfillments = Fulfillment::select('id', 'name')->inRandomOrder()->get();
             $colors = Attribute::with('keys')->where('id', 1)->inRandomOrder()->get();
-            $colors=FiltersAttributeResource::collection($colors);
+            $colors = FiltersAttributeResource::collection($colors);
             return response()->json([
                 'status' => 200,
                 'categories' => $categories,
@@ -110,7 +110,7 @@ class WebFiltersController extends Controller
 
             // CONDIONAL QUERYING
             $products = Product::select('id', 'name', 'slug', 'primary_image', 'brand_id', 'likes', 'views', 'sales', 'reports', 'total_reviews', 'avg_rating')
-                ->where($filters)->where('status',1)->orderBy('created_at', 'desc');
+                ->where($filters)->where('status', 1)->orderBy('created_at', 'desc');
 
 
             if (!empty($brands)) {
@@ -118,9 +118,10 @@ class WebFiltersController extends Controller
             }
             if (!empty($stores)) {
                 $products = $products->whereIn('store_id', $stores);
-            } if (empty($stores)) {
-                $products = $products->whereRelation('store','is_verified','=',1);
-                $products = $products->whereRelation('store','status','=',1);
+            }
+            if (empty($stores)) {
+                $products = $products->whereRelation('store', 'is_verified', '=', 1);
+                $products = $products->whereRelation('store', 'status', '=', 1);
             }
 
 
@@ -182,7 +183,7 @@ class WebFiltersController extends Controller
             ];
 
             if ($request->category_id) {
-                $category = Category::where('id', $request->category_id)->where('status',1)->with('subcategories.childcategories.brands', 'stores')->first();
+                $category = Category::where('id', $request->category_id)->where('status', 1)->with('subcategories.childcategories.brands', 'stores')->first();
                 // array_push($filters , $category);
                 $matching_filters['category'] = $category;
 
@@ -196,14 +197,14 @@ class WebFiltersController extends Controller
 
 
             } else {
-                $category = Category::with('subcategories.childcategories', 'brands', 'stores')->where('status',1)->get();
+                $category = Category::with('subcategories.childcategories', 'brands', 'stores')->where('status', 1)->get();
                 $matching_filters['category'] = $category;
-                $brands = Brand::select('id', 'name')->where('status',1)->get();
+                $brands = Brand::select('id', 'name')->where('status', 1)->get();
                 $matching_filters['brands'] = $brands;
             }
 
             if ($request->subcategory_id) {
-                $subcategory = SubCategory::where('id', $request->subcategory_id)->where('status',1)->with('category', 'childcategories', 'brands')->first();
+                $subcategory = SubCategory::where('id', $request->subcategory_id)->where('status', 1)->with('category', 'childcategories', 'brands')->first();
                 $category = $subcategory->category->toArray();
 
                 // empty matching_filters
@@ -223,7 +224,7 @@ class WebFiltersController extends Controller
             }
 
             if ($request->childcategory_id) {
-                $childcategory = ChildCategory::where('id', $request->childcategory_id)->where('status',1)->with('category', 'subcategory', 'brands')->first();
+                $childcategory = ChildCategory::where('id', $request->childcategory_id)->where('status', 1)->with('category', 'subcategory', 'brands')->first();
                 $category = $childcategory->category->toArray();
                 $subcategory = $childcategory->subcategory->toArray();
 
@@ -324,240 +325,254 @@ class WebFiltersController extends Controller
     public function filteredProductsSlug(Request $request)
     {
 
-            $per_page_products = $request->perPageProducts;
-            $brands = [];
-            $brnd=0;
-            if ($request->brands) {
-                foreach ($request->brands as $brand) {
-                    $data = Brand::where('slug', $brand)->first();
-                    if ($data) {
-                        $brands[] = $data->id;
-                    }
-                }
-            }
-        $brnd=$brands;
-            $store = $request->store_id;
-
-            $filter_requests = $request->except('perPageProducts', 'currentPage', 'page', 'brands', 'stores', 'min_price', 'max_price');
-
-            $filters = [];
-
-            foreach ($filter_requests as $key => $req) {
-                if ($req) {
-
-                    $filters[$key] = $req;
-                }
-            }
 
 
-            if (isset($request->min_price)) {
-                $min_price = $request->min_price;
-            } else {
-                $min_price = 0;
-            }
+        $per_page_products = $request->perPageProducts;
+        $brands = [];
 
-            if (isset($request->max_price)) {
-                $max_price = $request->max_price;
-            } else {
-                $max_price = 0;
-            }
+        if ($request->brands) {
+            $brands = Brand::where('slug', explode(',',$request->brands))->get()->pluck('id');
+        }
+        $store = $request->store_id;
 
-            // CONDIONAL QUERYING
+        if (isset($request->min_price)) {
+            $min_price = $request->min_price;
+        } else {
+            $min_price = 0;
+        }
 
-            $products = Product::with('category')
-                ->with('brand')
-                ->with('firstVariant')
-                ->where('status',1)
-                ->select('id', 'name', 'name_ar','slug', 'primary_image', 'brand_id', 'likes', 'views', 'sales', 'reports', 'total_reviews', 'avg_rating')
-                ->when($request->has('category_id') && $request->filled('category_id'), function ($query) use ($request) {
-                    $query->where('category_id', Category::where('slug', $request->category_id)->first()->id);
-                })
-                ->when($request->has('subcategory_id') && $request->filled('subcategory_id'), function ($query) use ($request) {
-                    $query->where('subcategory_id', SubCategory::where('slug', $request->subcategory_id)->first()->id);
-                })
-                ->when($request->has('childcategory_id') && $request->filled('childcategory_id'), function ($query) use ($request) {
-                    $query->where('childcategory_id', ChildCategory::where('slug', $request->childcategory_id)->first()->id);
-                })
-                ->when($max_price > $min_price, function ($query) use ($min_price, $max_price) {
-                    $query->with('variants', function ($q) use ($min_price, $max_price) {
-                        $q->where([
-                            ['special_price', '>=', $min_price],
-                            ['special_price', '<=', $max_price]
-                        ]);
-                    })->whereHas('variants', function ($q) use ($min_price, $max_price) {
-                        $q->where([
-                            ['special_price', '>=', $min_price],
-                            ['special_price', '<=', $max_price]
-                        ]);
-                    });
-                })
-                ->when($min_price > 0, function ($query) use ($min_price, $max_price) {
-                    $query->with('variants', function ($q) use ($min_price, $max_price) {
-                        $q->where([
-                            ['special_price', '>=', $min_price],
-                        ]);
-                    })->whereHas('variants', function ($q) use ($min_price, $max_price) {
-                        $q->where([
-                            ['special_price', '>=', $min_price],
-                        ]);
-                    });
-                })
-                ->when(!empty($brands), function ($query) use ($brands) {
-                    $query->whereIn('brand_id', $brands);
-                })->when(!empty($store), function ($query) use ($store) {
-                    $query->where('store_id', $store);
-                })
-                ->orderBy('created_at', 'desc')
-                ->withCount('mostSoldProducts')
-                ->withCount('mostWishlistProducts')
-                ->paginate($per_page_products);
+        if (isset($request->max_price)) {
+            $max_price = $request->max_price;
+        } else {
+            $max_price = 0;
+        }
 
-            $products = ProductResource::collection($products);
+        // CONDIONAL QUERYING
 
-            // matching filters
+        $products = Product::with('category')
+            ->with('brand')
+            ->with('firstVariant')
+            ->where('status', 1)
+            ->select('products.id', 'products.name', 'products.name_ar', 'products.slug', 'products.primary_image', 'products.brand_id', 'products.likes', 'products.views', 'products.sales', 'products.reports', 'products.total_reviews', 'products.avg_rating')
+//            ->select('id', 'name', 'name_ar', 'slug', 'primary_image', 'brand_id', 'likes', 'views', 'sales', 'reports', 'total_reviews', 'avg_rating')
+            ->when($request->has('category_id') && $request->filled('category_id'), function ($query) use ($request) {
+                $query->where('category_id', Category::where('slug', $request->category_id)->first()->id);
+            })
+            ->when($request->has('subcategory_id') && $request->filled('subcategory_id'), function ($query) use ($request) {
+                $query->where('subcategory_id', SubCategory::where('slug', $request->subcategory_id)->first()->id);
+            })
+            ->when($request->has('childcategory_id') && $request->filled('childcategory_id'), function ($query) use ($request) {
+                $query->where('childcategory_id', ChildCategory::where('slug', $request->childcategory_id)->first()->id);
+            })
+            ->when($request->has('sort_by') && $request->sort_by == 'latest_product', function ($query) use ($request) {
+                $query->latest();
+            })
+            ->when($request->has('sort_by') && $request->sort_by == 'min_price', function ($query) use ($request) {
+                $query->join('product_variants', 'product_variants.product_id', '=', 'products.id')
+                    ->orderBy('product_variants.special_price', 'ASC');
+            })
+            ->when($request->has('sort_by') && $request->sort_by == 'max_price', function ($query) use ($request) {
+                $query->join('product_variants', 'product_variants.product_id', '=', 'products.id')
+                    ->orderBy('product_variants.special_price', 'DESC');
+            })
+            ->when($request->has('sort_by') && $request->sort_by == 'most_sold_products', function ($query) use ($request) {
+                $query->orderBy('most_sold_products_count', 'DESC');
+            })
+            ->when($request->has('sort_by') && $request->sort_by == 'most_wishlisted_products', function ($query) use ($request) {
+                $query->orderBy('most_wishlist_products_count', 'DESC');
+
+            })
+            ->when($request->has('sort_by') && $request->sort_by == 'most_viewed_products', function ($query) use ($request) {
+                $query->orderBy('views', 'DESC');
+
+            })
+            ->when($max_price > $min_price, function ($query) use ($min_price, $max_price) {
+                $query->with('variants', function ($q) use ($min_price, $max_price) {
+                    $q->where([
+                        ['special_price', '>=', $min_price],
+                        ['special_price', '<=', $max_price]
+                    ]);
+                })->whereHas('variants', function ($q) use ($min_price, $max_price) {
+                    $q->where([
+                        ['special_price', '>=', $min_price],
+                        ['special_price', '<=', $max_price]
+                    ]);
+                });
+            })
+            ->when($min_price > 0, function ($query) use ($min_price, $max_price) {
+                $query->with('variants', function ($q) use ($min_price, $max_price) {
+                    $q->where([
+                        ['special_price', '>=', $min_price],
+                    ]);
+                })->whereHas('variants', function ($q) use ($min_price, $max_price) {
+                    $q->where([
+                        ['special_price', '>=', $min_price],
+                    ]);
+                });
+            })
+            ->when(!empty($brands), function ($query) use ($brands) {
+                $query->whereIn('brand_id', $brands);
+            })->when(!empty($store), function ($query) use ($store) {
+                $query->where('store_id', $store);
+            })
+            ->orderBy('products.created_at', 'desc')
+            ->withCount('mostSoldProducts')
+            ->withCount('mostWishlistProducts')
+            ->paginate($per_page_products);
+
+        $products = ProductResource::collection($products);
+
+        // matching filters
+        $matching_filters = [];
+
+
+        if ($request->childcategory_id) {
+            $childcategory = ChildCategory::where('slug', $request->childcategory_id)->where('status', 1)
+                ->with(['category' => function ($query) {
+                    $query->withCount('products');
+                }, 'subcategory' => function ($query) {
+                    $query->withCount('products');
+
+                }])
+                ->first();
+            $category = $childcategory->category->toArray();
+            $subcategory = $childcategory->subcategory->toArray();
+
+            // empty matching_filters
             $matching_filters = [];
 
+            // cat
+            $matching_filters['category'] = $category;
 
-            if ($request->childcategory_id) {
-                $childcategory = ChildCategory::where('slug', $request->childcategory_id)->where('status',1)
-                    ->with(['category'=>function($query){
-                        $query->withCount('products');
-                    }, 'subcategory'=>function($query){
-                        $query->withCount('products');
+            // subcat
+            $matching_filters['category']['subcategories'] = [];
+            array_push($matching_filters['category']['subcategories'], $subcategory);
 
-                    }])
-                    ->first();
-                $category = $childcategory->category->toArray();
-                $subcategory = $childcategory->subcategory->toArray();
-
-                // empty matching_filters
-                $matching_filters = [];
-
-                // cat
-                $matching_filters['category'] = $category;
-
-                // subcat
-                $matching_filters['category']['subcategories'] = [];
-                array_push($matching_filters['category']['subcategories'], $subcategory);
-
-                // childcat
-                $matching_filters['category']['subcategories'][0]['childcategories'] = [];
-                array_push($matching_filters['category']['subcategories'][0]['childcategories'], $childcategory);
-                $matching_filters['category']=MatchingFiltersResource::make($matching_filters['category']);
+            // childcat
+            $matching_filters['category']['subcategories'][0]['childcategories'] = [];
+            array_push($matching_filters['category']['subcategories'][0]['childcategories'], $childcategory);
+            $matching_filters['category'] = MatchingFiltersResource::make($matching_filters['category']);
 //                $brands = $childcategory->brands;
 
-                $brands_id = DB::table('products')->where('childcategory_id', $childcategory->id)->distinct()->pluck('brand_id');
-                $brands = Brand::whereIn('id', $brands_id)->select('id', 'name','name_ar','slug')->where('status',1)->get();
-                $matching_filters['brands'] = BrandResource::collection($brands);
+            $brands_id = DB::table('products')->where('childcategory_id', $childcategory->id)->distinct()->pluck('brand_id');
+            $brands = Brand::whereIn('id', $brands_id)->select('id', 'name', 'name_ar', 'slug')->where('status', 1)->get();
+            $matching_filters['brands'] = BrandResource::collection($brands);
 
 
-            } elseif ($request->subcategory_id) {
-                $subcategory = SubCategory::where('slug', $request->subcategory_id)->where('status',1)
-                    ->with(['category'=>function($query){
-                        $query->withCount('products');
-                    }, 'childcategories'=>function($query){
-                        $query->withCount('products');
+        } elseif ($request->subcategory_id) {
+            $subcategory = SubCategory::where('slug', $request->subcategory_id)->where('status', 1)
+                ->with(['category' => function ($query) {
+                    $query->withCount('products');
+                }, 'childcategories' => function ($query) {
+                    $query->withCount('products');
 
-                    }])
-                    ->first();
-                $category = $subcategory->category->toArray();
+                }])
+                ->first();
+            $category = $subcategory->category->toArray();
 
-                // empty matching_filters
-                $matching_filters = [];
-                // cat
-                $matching_filters['category'] = $category;
+            // empty matching_filters
+            $matching_filters = [];
+            // cat
+            $matching_filters['category'] = $category;
 
-                // subcat
-                $matching_filters['category']['subcategories'] = [];
-                array_push($matching_filters['category']['subcategories'], $subcategory);
-                $matching_filters['category']=MatchingFiltersResource::make($matching_filters['category']);
+            // subcat
+            $matching_filters['category']['subcategories'] = [];
+            array_push($matching_filters['category']['subcategories'], $subcategory);
+            $matching_filters['category'] = MatchingFiltersResource::make($matching_filters['category']);
 
-                // brands
+            // brands
 //                $brands = $subcategory->brands;
 
-                $brands_id = DB::table('products')->where('subcategory_id', $subcategory->id)->distinct()->pluck('brand_id');
-                $brands = Brand::whereIn('id', $brands_id)->select('id', 'name','name_ar','slug')->where('status',1)->get();
-                $matching_filters['brands'] = BrandResource::collection($brands);
+            $brands_id = DB::table('products')->where('subcategory_id', $subcategory->id)->distinct()->pluck('brand_id');
+            $brands = Brand::whereIn('id', $brands_id)->select('id', 'name', 'name_ar', 'slug')->where('status', 1)->get();
+            $matching_filters['brands'] = BrandResource::collection($brands);
 
-            } elseif ($request->category_id) {
-                $category = Category::where('slug', $request->category_id)->where('status',1)->with('subcategories.childcategories.brands', 'stores')
-                    ->with(['subcategories.childcategories'=>function($query){
-                        $query->withCount('products');
-                    }, 'subcategories'=>function($query){
-                        $query->withCount('products');
+        } elseif ($request->category_id) {
+            $category = Category::where('slug', $request->category_id)->where('status', 1)->with('subcategories.childcategories.brands', 'stores')
+                ->with(['subcategories.childcategories' => function ($query) {
+                    $query->withCount('products');
+                }, 'subcategories' => function ($query) {
+                    $query->withCount('products');
 
-                    }])
-                    ->first();
-                $matching_filters['category']=MatchingFiltersResource::make($category);
-                $brands_id = DB::table('products')->where('category_id', $category->id)->distinct()->pluck('brand_id');
-                $brands = Brand::whereIn('id', $brands_id)->select('id', 'name','name_ar','slug')->where('status',1)->get();
-                $matching_filters['brands'] =  BrandResource::collection($brands);
+                }])
+                ->first();
+            $matching_filters['category'] = MatchingFiltersResource::make($category);
+            $brands_id = DB::table('products')->where('category_id', $category->id)->distinct()->pluck('brand_id');
+            $brands = Brand::whereIn('id', $brands_id)->select('id', 'name', 'name_ar', 'slug')->where('status', 1)->get();
+            $matching_filters['brands'] = BrandResource::collection($brands);
 
 
-            } elseif($request->brands) {
-                $categories_ids = DB::table('products')->whereIn('brand_id', $brands)->distinct()->pluck('category_id');
-                $category = Category::with('subcategories.childcategories.brands', 'stores')
-                    ->with(['subcategories.childcategories'=>function($query){
-                        $query->withCount('products');
-                    }, 'subcategories'=>function($query){
-                        $query->withCount('products');
+        } elseif ($request->brands) {
+            $categories_ids = DB::table('products')->whereIn('brand_id', $brands)->distinct()->pluck('category_id');
+            $category = Category::with('subcategories.childcategories.brands', 'stores')
+                ->with(['subcategories.childcategories' => function ($query) {
+                    $query->withCount('products');
+                }, 'subcategories' => function ($query) {
+                    $query->withCount('products');
 
-                    }])
-                    ->withCount('products')
-                    ->whereIn('id', $categories_ids)->get();
-                $matching_filters['category'] = MatchingFiltersResource::collection($category);
-                $brands = Brand::whereIn('id', $brands)->select('id', 'name','name_ar','slug')->where('status',1)->get();
-                $matching_filters['brands'] = BrandResource::collection($brands);
-            }else {
-                $category = Category::with('subcategories.childcategories.brands', 'stores')
-                    ->with(['subcategories.childcategories'=>function($query){
-                        $query->withCount('products');
-                    }, 'subcategories'=>function($query){
-                        $query->withCount('products');
+                }])
+                ->withCount('products')
+                ->whereIn('id', $categories_ids)->get();
+            $matching_filters['category'] = MatchingFiltersResource::collection($category);
+            $brands = Brand::whereIn('id', $brands)->select('id', 'name', 'name_ar', 'slug')->where('status', 1)->get();
+            $matching_filters['brands'] = BrandResource::collection($brands);
+        } else {
+            $category = Category::with('subcategories.childcategories.brands', 'stores')
+                ->with(['subcategories.childcategories' => function ($query) {
+                    $query->withCount('products');
+                }, 'subcategories' => function ($query) {
+                    $query->withCount('products');
 
-                    }])
-                    ->withCount('products')
-                    ->get();
-                $matching_filters['category'] = MatchingFiltersResource::collection($category);
-                $brands_id = DB::table('products')->distinct()->pluck('brand_id');
-                $brands = Brand::whereIn('id', $brands_id)->select('id', 'name','name_ar','slug')->where('status',1)->get();
-                $matching_filters['brands'] = BrandResource::collection($brands);
+                }])
+                ->withCount('products')
+                ->get();
+            $matching_filters['category'] = MatchingFiltersResource::collection($category);
+            $brands_id = DB::table('products')->distinct()->pluck('brand_id');
+            $brands = Brand::whereIn('id', $brands_id)->select('id', 'name', 'name_ar', 'slug')->where('status', 1)->get();
+            $matching_filters['brands'] = BrandResource::collection($brands);
+        }
+
+        // applied filters
+        $filters = [];
+
+
+        if ($request->brands) {
+            $brands = Brand::whereIn('slug',explode(',',$request->brands))->get();
+            foreach ($brands as $brand) {
+               $brand->model_type='Brand';
+                array_push($filters, $brand);
             }
+        }
 
-            // applied filters
-            $filters = [];
+        if ($request->category_id) {
+            $category = Category::where('slug', $request->category_id)->first();
+            array_push($filters, $category);
+        }
 
+        if ($request->subcategory_id) {
+            $subcategory = SubCategory::where('slug', $request->subcategory_id)->first();
+            array_push($filters, $subcategory);
 
-            if (count($brnd) > 0) {
-                array_push($filters, $brnd);
-            }
-            if ($request->category_id) {
-                $category = Category::where('slug', $request->category_id)->first();
-                array_push($filters, $category);
-            }
+        }
 
-            if ($request->subcategory_id) {
-                $subcategory = SubCategory::where('slug', $request->subcategory_id)->first();
-                array_push($filters, $subcategory);
+        if ($request->childcategory_id) {
+            $childcategory = ChildCategory::where('slug', $request->childcategory_id)->first();
+            array_push($filters, $childcategory);
 
-            }
+        }
 
-            if ($request->childcategory_id) {
-                $childcategory = ChildCategory::where('slug', $request->childcategory_id)->first();
-                array_push($filters, $childcategory);
-
-            }
-
-
-            $filters=FiltersResource::collection($filters);
+        $filters = FiltersResource::collection($filters);
 //            filters end
 
-            return response()->json([
-                'status' => 200,
-                'products' => $products->response()->getData(),
-                'filters' => $filters,
-                'matching_filters' => $matching_filters
-            ]);
+
+        return response()->json([
+            'status' => 200,
+            'products' => $products->response()->getData(),
+            'filters' => $filters,
+            'matching_filters' => $matching_filters,
+            'min_price'=>$min_price,
+            'max_price'=>$max_price,
+        ]);
 
     }
 

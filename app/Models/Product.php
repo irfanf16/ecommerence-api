@@ -171,6 +171,10 @@ class Product extends Model
     {
         return $this->hasOne(ProductVariant::class, 'product_id', 'id');
     }
+ public function product_variants()
+    {
+        return $this->hasOne(ProductVariant::class, 'product_id', 'id');
+    }
 
 
 
