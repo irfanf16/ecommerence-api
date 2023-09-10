@@ -43,11 +43,10 @@ class AppHomeScreenController extends Controller
         $categories = Category::where('status', 1)
             ->with('subcategories', function ($query) {
                 $query->with('childcategories', function ($query) {
-                    $query->inRandomOrder()->where('status', 1)->limit(10);
-                })->where('status', 1)->limit(8);
+                    $query->inRandomOrder()->where('status', 1);
+                })->where('status', 1);
             })
             ->select('id', 'title', 'title_ar', 'slug', 'logo_image', 'mobile_image')
-            ->take(20)
             ->get();
 
         $categories = CategoryResource::collection($categories);
