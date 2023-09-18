@@ -127,11 +127,32 @@ class AppHomeScreenController extends Controller
             ->inRandomOrder()
             ->take(8)
             ->get();
-
         $new_arrival_products = ProductResource::collection($new_arrival_products);
 
+        $rand_sub_category=SubCategory::has('products')->inRandomOrder()->take(1)->get();
 
+        $rand_sub_products = Product::with('firstVariant','image')
+            ->whereHas('firstVariant', function ($query) {
+                $query->where('quantity', '>=', 1)->where('availability', 1);
+            })
+            ->select('id', 'name', 'name_ar', 'slug', 'primary_image', 'brand_id', 'likes', 'views', 'sales', 'reports', 'total_reviews', 'avg_rating')
+            ->where([
+                'status' => 1,
+            ])
+            ->where('store_id', $store_id)
+            ->where('subcategory_id', $rand_sub_category[0]->id)
+//                ->whereRelation('store', 'is_verified', '=', 1)->whereRelation('store', 'status', '=', 1)
+            ->inRandomOrder()
+            ->take(4)
+            ->get();
 
+        $rand_sub_products = ProductResource::collection($rand_sub_products);
+        $rand_sub_category = SubCategoryResource::collection($rand_sub_category);
+
+        $random_sub_category_with_products=[
+            'category'=>$rand_sub_category,
+            'products'=>$rand_sub_products
+        ];
 
         return response()->json([
             'status' => 200,
@@ -144,6 +165,7 @@ class AppHomeScreenController extends Controller
             'popular_products' => $popular_products,
             'new_added_products' => $new_added_products,
             'new_arrival_products' => $new_arrival_products,
+            'random_sub_category_with_products'=>$random_sub_category_with_products
         ]);
 
 //        } catch (\Throwable $th) {
