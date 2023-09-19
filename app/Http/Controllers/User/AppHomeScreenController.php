@@ -168,6 +168,7 @@ class AppHomeScreenController extends Controller
             ->take(8)->get();
         $men_child_category = ChildCategoryResource::collection($men_child_category);
 
+        
         return response()->json([
             'status' => 200,
             'covers' => $covers,
