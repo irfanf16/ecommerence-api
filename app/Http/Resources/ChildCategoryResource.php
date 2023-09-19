@@ -18,6 +18,8 @@ class ChildCategoryResource extends JsonResource
         return [
             'id' => $this['id'],
             'slug' => $this['slug'],
+            'cate_slug'=>isset($this['category']) ? $this['category']->slug : '',
+            'sub_cate_slug'=>isset($this['subcategory']) ? $this['subcategory']->slug : '',
             'image' => $this['image'],
             'title' => $lang == 'ar' ? $this['title_ar'] : $this['title'],
             'keyword' => $lang == 'ar' ? $this['title_ar'] : $this['title'],

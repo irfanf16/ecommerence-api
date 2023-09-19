@@ -5,6 +5,7 @@ namespace App\Http\Controllers\User;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\BrandResource;
 use App\Http\Resources\CategoryResource;
+use App\Http\Resources\ChildCategoryResource;
 use App\Http\Resources\FeatureCategoryResource;
 use App\Http\Resources\FeaturedSellersResource;
 use App\Http\Resources\FeaturedUserStoreResource;
@@ -13,6 +14,7 @@ use App\Http\Resources\ProductResource;
 use App\Http\Resources\SubCategoryResource;
 use App\Models\AppSetting;
 use App\Models\Brand;
+use App\Models\ChildCategory;
 use App\Models\SubCategory;
 use App\Models\WebsiteBanner;
 use Illuminate\Http\Request;
@@ -85,35 +87,36 @@ class AppHomeScreenController extends Controller
         $featured_products = ProductResource::collection($featured_products);
 
 
-        $popular_products = Product::with('firstVariant','image')
-            ->whereHas('firstVariant', function ($query) {
-                $query->where('quantity', '>=', 1)->where('availability', 1);
-            })
-//                ->whereRelation('store', 'is_verified', '=', 1)->whereRelation('store', 'status', '=', 1)
-            ->where('status', 1)
-            ->where('store_id', $store_id)
-            ->select('id', 'name', 'name_ar', 'slug', 'primary_image', 'brand_id', 'likes', 'views', 'sales', 'reports', 'total_reviews', 'avg_rating')
-            ->take(8)
-            ->inRandomOrder()
-            ->get();
+//        $popular_products = Product::with('firstVariant','image')
+//            ->whereHas('firstVariant', function ($query) {
+//                $query->where('quantity', '>=', 1)->where('availability', 1);
+//            })
+////                ->whereRelation('store', 'is_verified', '=', 1)->whereRelation('store', 'status', '=', 1)
+//            ->where('status', 1)
+//            ->where('store_id', $store_id)
+//            ->select('id', 'name', 'name_ar', 'slug', 'primary_image', 'brand_id', 'likes', 'views', 'sales', 'reports', 'total_reviews', 'avg_rating')
+//            ->take(8)
+//            ->inRandomOrder()
+//            ->get();
 
-        $popular_products = ProductResource::collection($popular_products);
+//        $popular_products = ProductResource::collection($popular_products);
 
-        $new_added_products = Product::with('firstVariant','image')
-            ->whereHas('firstVariant', function ($query) {
-                $query->where('quantity', '>=', 1)->where('availability', 1);
-            })
-            ->select('id', 'name', 'name_ar', 'slug', 'primary_image', 'brand_id', 'likes', 'views', 'sales', 'reports', 'total_reviews', 'avg_rating')
-            ->where([
-                'status' => 1,
-            ])
-            ->where('store_id', $store_id)
-//                ->whereRelation('store', 'is_verified', '=', 1)->whereRelation('store', 'status', '=', 1)
-            ->inRandomOrder()
-            ->take(8)
-            ->get();
-        $new_added_products = ProductResource::collection($new_added_products);
+//        $new_added_products = Product::with('firstVariant','image')
+//            ->whereHas('firstVariant', function ($query) {
+//                $query->where('quantity', '>=', 1)->where('availability', 1);
+//            })
+//            ->select('id', 'name', 'name_ar', 'slug', 'primary_image', 'brand_id', 'likes', 'views', 'sales', 'reports', 'total_reviews', 'avg_rating')
+//            ->where([
+//                'status' => 1,
+//            ])
+//            ->where('store_id', $store_id)
+////                ->whereRelation('store', 'is_verified', '=', 1)->whereRelation('store', 'status', '=', 1)
+//            ->inRandomOrder()
+//            ->take(8)
+//            ->get();
+//        $new_added_products = ProductResource::collection($new_added_products);
 
+        $sale_cate=Category::where('slug','sales')->first();
         $new_arrival_products = Product::with('firstVariant','image')
             ->whereHas('firstVariant', function ($query) {
                 $query->where('quantity', '>=', 1)->where('availability', 1);
@@ -123,6 +126,7 @@ class AppHomeScreenController extends Controller
                 'status' => 1,
             ])
             ->where('store_id', $store_id)
+            ->where('category_id', $sale_cate->id)
 //                ->whereRelation('store', 'is_verified', '=', 1)->whereRelation('store', 'status', '=', 1)
             ->inRandomOrder()
             ->take(8)
@@ -154,6 +158,16 @@ class AppHomeScreenController extends Controller
             'products'=>$rand_sub_products
         ];
 
+        $women_cate=Category::where('slug','womens')->first();
+        $women_child_category=ChildCategory::with('category','subcategory')->where('category_id',$women_cate->id)->inRandomOrder()
+            ->take(8)->get();
+        $women_child_category = ChildCategoryResource::collection($women_child_category);
+
+        $men_cate=Category::where('slug','men')->first();
+        $men_child_category=ChildCategory::with('category','subcategory')->where('category_id',$men_cate->id)->inRandomOrder()
+            ->take(8)->get();
+        $men_child_category = ChildCategoryResource::collection($men_child_category);
+
         return response()->json([
             'status' => 200,
             'covers' => $covers,
@@ -162,10 +176,12 @@ class AppHomeScreenController extends Controller
             'random_banner' => $random_banner,
             'top_featured_subcategories' => $top_featured_subcategories,
             'featured_products' => $featured_products,
-            'popular_products' => $popular_products,
-            'new_added_products' => $new_added_products,
+//            'popular_products' => $popular_products,
+//            'new_added_products' => $new_added_products,
             'new_arrival_products' => $new_arrival_products,
-            'random_sub_category_with_products'=>$random_sub_category_with_products
+            'random_sub_category_with_products'=>$random_sub_category_with_products,
+            'women_child_category'=>$women_child_category,
+            'men_child_category'=>$men_child_category
         ]);
 
 //        } catch (\Throwable $th) {
