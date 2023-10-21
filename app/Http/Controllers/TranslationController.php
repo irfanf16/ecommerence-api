@@ -307,21 +307,21 @@ class TranslationController extends Controller
 //                $file='https://api.storak.qa/'.$var1;
 
 //                dd(json_decode(file_get_contents($file))->content);
-                $ar_file= $this->translate( (json_decode($file))->content ?? 'Not provided','ar');
+                $ar_file= $this->translate( (json_decode($file))->content ?? 'Not provided','ru');
 
                 // STORE PRODUCT DETAIL DESCRIPTION
                 Storage::disk('product')->put("detail/$file_code.json", json_encode([
                     'content' => $ar_file,
                 ]));
             }else{
-                $ar_file= $this->translate( $product->detailed_description ?? 'Noat Provided','ar');
+                $ar_file= $this->translate( $product->detailed_description ?? 'Noat Provided','ru');
                 // STORE PRODUCT DETAIL DESCRIPTION
                 Storage::disk('product')->put("detail/$file_code.json", json_encode([
                     'content' => $ar_file,
                 ]));
             }
-            $product->name_ar = $this->translate($product->name ?? 'Not Provided', 'ar');
-            $product->short_description_ar = $this->translate($product->short_description ?? 'Not Provided', 'ar');
+            $product->name_ar = $this->translate($product->name ?? 'Not Provided', 'ru');
+            $product->short_description_ar = $this->translate($product->short_description ?? 'Not Provided', 'ru');
             $product->detailed_description_ar= "storage/product/detail/$file_code.json";
             $product->save();
         }
@@ -340,19 +340,19 @@ class TranslationController extends Controller
         ini_set('max_execution_time', '600'); //300 seconds = 5 minutes
         $categories = Category::all();
         foreach ($categories as $category) {
-            $category->title_ar = $this->translate($category->title ?? 'Not Provided', 'ar');
+            $category->title_ar = $this->translate($category->title ?? 'Not Provided', 'ru');
             $category->save();
         }
 
         $subcategories = SubCategory::all();
         foreach ($subcategories as $category) {
-            $category->title_ar = $this->translate($category->title ?? 'Not Provided', 'ar');
+            $category->title_ar = $this->translate($category->title ?? 'Not Provided', 'ru');
             $category->save();
         }
 
         $childCategories = ChildCategory::all();
         foreach ($childCategories as $category) {
-            $category->title_ar = $this->translate($category->title ?? 'Not Provided', 'ar');
+            $category->title_ar = $this->translate($category->title ?? 'Not Provided', 'ru');
             $category->save();
         }
         dd('translated successfully');

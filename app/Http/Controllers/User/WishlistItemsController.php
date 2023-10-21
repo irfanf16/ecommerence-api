@@ -22,7 +22,7 @@ class WishlistItemsController extends Controller
         try {
             $wishlist_items = WishlistItem::where('user_id', Auth::id())
                                             ->with([
-                                                'productDetail:id,name,slug,store_id,primary_image',
+                                                'productDetail:id,name,name_ar,slug,store_id,primary_image',
                                                 'productDetail.store:id,store_name'
                                             ])
                                             ->with('variantDetail')
